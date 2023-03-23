@@ -3,47 +3,53 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { spawn } from 'child_process'
 
 type ReqMACAddress = {
-    macAddress: string[]
+    macAddressList: string[]
 }
 
-type Data = {
-    macAddress: string[],
-    ipAddress: string[],
-    isCennecting: boolean[],
+type deviceInfo = {
+    macAddress: string,
+    isConnecting: boolean,
 }
 
 export default function handler(
     req: NextApiRequest,
-    res: NextApiResponse<Data>
+    res: NextApiResponse<deviceInfo[]>
   ) {
-    const { macAddress } = req.body as ReqMACAddress
-    if (macAddress.length === 0) {
-        res.status(200).json({ macAddress: [], ipAddress: [], isCennecting: [] })
+    console.log(req.body)
+    const { macAddressList } = req.body as ReqMACAddress
+    // console.log(macAddressList);
+    if (macAddressList.length === 0) {
+        res.status(200).json([])
     }
     const child = spawn('arp', ['-a']);
 
-    const isConnectingList: boolean[] = []
-    const ipAddressList: string[] = []
-    const macAddressList: string[] = []
+    const deviceInfoList: deviceInfo[] = []
 
     child.stdout.on('data', (data) => {
-        const arpList = data.toString().split('\r\n')
-        arpList.forEach((arp:string) => {
-            const arpInfo = arp.split(' ')
-            const arpMacAddress = arpInfo[3]
-            const arpIpAddress = arpInfo[1].replace('(', '').replace(')', '')
-            if (macAddress.includes(arpMacAddress)) {
-                isConnectingList.push(true)
-                ipAddressList.push(arpIpAddress)
-                macAddressList.push(arpMacAddress)
-            }
+        const arpList = data.toString().split('\n')
+        macAddressList.forEach((macAddress:string) => {
+            var isConnectingFlag = false
+            arpList.forEach((arp:string) => {
+                const arpInfo = arp.split(' ')
+                // console.log(arpInfo[3])
+                if (arpInfo.length < 4) {
+                    return
+                }
+                if (arpInfo[3] === macAddress) {
+                    // console.log("arpInfo[3] === macAddress");
+                    isConnectingFlag = true
+                }
+            })
+            deviceInfoList.push({ macAddress: macAddress, isConnecting: isConnectingFlag })
         })
-        res.status(200).json({ macAddress: macAddressList, ipAddress: ipAddressList, isCennecting: isConnectingList })
+
+        console.log(deviceInfoList)
+        res.status(200).json(deviceInfoList)
     });
 
     child.stderr.on('data', (data) => {
         console.log(`stderr: ${data}`);
-        res.status(500).json({ macAddress: [], ipAddress: [], isCennecting: [] })
+        res.status(500).json([])
     });
 
 
