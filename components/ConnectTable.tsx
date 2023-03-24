@@ -27,6 +27,8 @@ const ConnectTable = () => {
       .then((res) => {
         const date = new Date();
         setTimeStamp(date.toLocaleString());
+        console.log(res.status);
+        console.log(res.data);
         setStudentStatusList(res.data);
       });
   };
@@ -37,7 +39,6 @@ const ConnectTable = () => {
       fetchDeviceList();
       // 0.5秒待つ
       setTimeout(() => {
-        console.log(studentStatusList[0]);
         setIsFetching(false);
       }, 500);
     }, 10000);

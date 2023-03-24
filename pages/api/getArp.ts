@@ -27,45 +27,51 @@ export default function handler(
         const studentDataList = require('@/data/studentList.json').students as studentData[]
         if (studentDataList.length === 0) {
             res.status(500).json([])
-            return
         }
 
         const child = spawn('arp', ['-a']);
 
+        child.on('error', (error) => {
+            console.error(`child process error: ${error}`);
+            res.status(500).json([])
+        });
+      
+        child.stderr.on('data', (data) => {
+            console.error(`child process error: ${data}`);
+            res.status(500).json([])
+        });
+
+
         const studentStatusList: studentStatus[] = []
 
-        if (child.stderr) {
-            child.stderr.on('data', (data) => {
-                res.status(500).json([])
-            });
-        } else {
-            child.stdout.on('data', (data) => {
-                const arpList = data.toString().split('\n')
-                studentDataList.forEach((studentData) => {
-                    var isConnectingFlag = false
-                    arpList.forEach((arp:string) => {
-                        const arpInfo = arp.split(' ')
-                        // console.log(arpInfo[3] + ' ' + studentData.macAddress)
-                        if (arpInfo.length < 4) {
-                            return
-                        }
-                        if (arpInfo[3] === studentData.macAddress) {
-                            isConnectingFlag = true
-                        }
-                    })
-                    studentStatusList.push({
-                        name: studentData.name,
-                        grade: studentData.grade,
-                        lab: studentData.lab,
-                        isConnecting: isConnectingFlag
-                    })
-                })
 
-                // console.log(studentStatusList)
-                res.status(200).json(studentStatusList)
-            });
-        }
+        child.stdout.on('data', (data) => {
+            const arpList = data.toString().split('\n')
+            studentDataList.forEach((studentData) => {
+                var isConnectingFlag = false
+                arpList.forEach((arp:string) => {
+                    const arpInfo = arp.split(' ')
+                    if (arpInfo.length < 4) {
+                        return
+                    }
+                    if (arpInfo[3] === studentData.macAddress) {
+                        isConnectingFlag = true
+                    }
+                })
+                studentStatusList.push({
+                    name: studentData.name,
+                    grade: studentData.grade,
+                    lab: studentData.lab,
+                    isConnecting: isConnectingFlag
+                })
+            })
+
+            console.log("200")
+            console.log(studentStatusList)
+            res.status(200).json(studentStatusList)
+        });
     } else {
+        console.log("405")
         res.status(405).json([])
     }
 
