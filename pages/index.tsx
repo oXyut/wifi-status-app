@@ -29,10 +29,10 @@ export default function Home() {
           <ThemeProvider theme={theme}>
             <Container component="main" maxWidth="md" sx={{ mb: 4 }}>
               <Typography component="h1" variant="h2" align="center" color="primary" gutterBottom>
-                Check Connection
+                A621 出席確認
               </Typography>
               <Typography variant="body1" align="center" color="secondary" paragraph>
-                このページでは、指定したMACアドレスのデバイスの接続状況を確認できます。
+                Wi-Fiに接続しているかどうかを利用して出席を確認しています。
               </Typography>
               <ConnectTable/>
             </Container> 
