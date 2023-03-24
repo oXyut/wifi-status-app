@@ -2,51 +2,70 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import { spawn } from 'child_process'
 
-type ReqMACAddress = {
-    macAddressList: string[]
+type studentData = {
+    studentId: string,
+    lab: string,
+    grade: string,
+    name: string,
+    macAddress: string,
 }
 
-type deviceInfo = {
-    macAddress: string,
+type studentStatus = {
+    name: string,
+    grade: string,
+    lab: string,
     isConnecting: boolean,
 }
 
 export default function handler(
     req: NextApiRequest,
-    res: NextApiResponse<deviceInfo[]>
+    res: NextApiResponse<studentStatus[]>
   ) {
-    const { macAddressList } = req.body as ReqMACAddress
-    if (macAddressList.length === 0) {
-        res.status(200).json([])
-    }
-    const child = spawn('arp', ['-a']);
+    if (req.method === 'GET'){
+        // /data/studentList.jsonから学生の情報を取得
+        const studentDataList = require('@/data/studentList.json').students as studentData[]
+        if (studentDataList.length === 0) {
+            res.status(500).json([])
+            return
+        }
 
-    const deviceInfoList: deviceInfo[] = []
+        const child = spawn('arp', ['-a']);
 
-    child.stdout.on('data', (data) => {
-        const arpList = data.toString().split('\n')
-        macAddressList.forEach((macAddress:string) => {
-            var isConnectingFlag = false
-            arpList.forEach((arp:string) => {
-                const arpInfo = arp.split(' ')
-                if (arpInfo.length < 4) {
-                    return
-                }
-                if (arpInfo[3] === macAddress) {
-                    isConnectingFlag = true
-                }
+        const studentStatusList: studentStatus[] = []
+
+        child.stdout.on('data', (data) => {
+            const arpList = data.toString().split('\n')
+            studentDataList.forEach((studentData) => {
+                var isConnectingFlag = false
+                arpList.forEach((arp:string) => {
+                    const arpInfo = arp.split(' ')
+                    // console.log(arpInfo[3] + ' ' + studentData.macAddress)
+                    if (arpInfo.length < 4) {
+                        return
+                    }
+                    if (arpInfo[3] === studentData.macAddress) {
+                        isConnectingFlag = true
+                    }
+                })
+                studentStatusList.push({
+                    name: studentData.name,
+                    grade: studentData.grade,
+                    lab: studentData.lab,
+                    isConnecting: isConnectingFlag
+                })
             })
-            deviceInfoList.push({ macAddress: macAddress, isConnecting: isConnectingFlag })
-        })
 
-        // console.log(deviceInfoList)
-        res.status(200).json(deviceInfoList)
-    });
+            // console.log(studentStatusList)
+            res.status(200).json(studentStatusList)
+        });
 
-    child.stderr.on('data', (data) => {
-        console.log(`stderr: ${data}`);
-        res.status(500).json([])
-    });
+        child.stderr.on('data', (data) => {
+            // console.log(`stderr: ${data}`);
+            res.status(500).json([])
+        });
+    } else {
+        res.status(405).json([])
+    }
 
 
 }
