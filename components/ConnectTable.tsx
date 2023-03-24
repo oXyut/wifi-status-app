@@ -13,7 +13,7 @@ const ConnectTable = () => {
 
   const fetchDeviceList = () => {
     setIsFetching(true);
-    axios.post('/api/getArp', { macAddressList: ['5a:bd:2e:58:76:5e'] }).then((res) => {
+    axios.post('/api/getArp', { macAddressList: ['5a:bd:2e:58:76:5e', '62:e7:d1:e2:d9:a9'] }).then((res) => {
         setDeviceList(res.data);
         });
   };
@@ -26,7 +26,7 @@ const ConnectTable = () => {
       setTimeout(() => {
         console.log(deviceList[0]);
         setIsFetching(false);
-      }, 1000);
+      }, 500);
     }, 10000);
     return () => clearInterval(interval);
   }, []);
