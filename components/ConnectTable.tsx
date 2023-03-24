@@ -40,8 +40,10 @@ const ConnectTable = () => {
         console.log(studentStatusList[0]);
         setIsFetching(false);
       }, 500);
-    }, 100000);
+    }, 10000);
     return () => clearInterval(interval);
+    // useEffectの第２引数に空配列を渡すとWarningが出るのでeslintのルールを無効化している
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
